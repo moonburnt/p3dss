@@ -23,9 +23,10 @@ something already animated (gif, etc).
 ## Usage:
 
 - Install library with setup.py
-- Check [usage examples](https://github.com/moonburnt/p3dss/example)
+- Check [usage examples](https://github.com/moonburnt/p3dss/tree/master/example)
 
 ## License:
 
 This software has been licensed under [MIT](LICENSE). For license of media used
-in example snippets, see [sprite_info.txt](example/sprite_info.txt)
+in example snippets, see [sprite_info.txt](
+https://github.com/moonburnt/p3dss/tree/master/example/sprite_info.txt)
