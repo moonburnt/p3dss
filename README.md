@@ -22,7 +22,8 @@ something already animated (gif, etc).
 
 ## Usage:
 
-For usage example, see the content of [example](example) directory
+- Install library with setup.py
+- Check [usage examples](https://github.com/moonburnt/p3dss/example)
 
 ## License:
 
