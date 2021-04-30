@@ -16,9 +16,17 @@ This project depends solely on panda3d and nothing else.
 
 ## Limitations:
 
-I've only tested this with .png images, but theoretically every texture format
+1. I've only tested this with .png images, but theoretically every texture format
 supported by panda3d itself, should work. For as long as its static image and not
 something already animated (gif, etc).
+
+2. Because this library's spritesheet handling mechanism is based on setting
+offsets, rather than cutting image in memory, following limitations apply:
+- Spritesheet **has to divide to provided sprite size without remainder**. If it
+doesnt cut to perfect sprites, you will get strange results while using some of
+these (e.g blurry parts, parts of other sprite visible on previous and such)
+- Amount of sprite rows and columns **must be the power of 2**. Otherwise you will
+get glitches described above
 
 ## Usage:
 
