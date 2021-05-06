@@ -10,7 +10,7 @@ class SpritesheetObject:
     '''Create 2D CardMaker node out of provided spritesheet and sprite data. Can
     be then used to show various animations and static sprites from provided sheet'''
     def __init__(self, name:str, spritesheet, sprites: list, sprite_size:int,
-                 parent = None, default_sprite:int = 0):
+                 parent = None, default_sprite:int = 0, default_action = None):
 
         if not parent:
             parent = render
@@ -68,33 +68,57 @@ class SpritesheetObject:
         #there for anims updater, but its meant to be overwritten at 100% cases
         self.currently_shown = None
 
+        self.default_action = default_action
+
         self.items = {}
         #this can be a bit complicated to tweak later, because sprites become
         #offsets and offsets become sprites... Idk what Im typing anymore lol
         for sprite in sprites:
             #this may crash on incorrect length
             if isinstance(sprites[sprite]['sprites'], int):
-                data = Sprite(name = sprite,
-                              sprites = offsets,
-                              offset = sprites[sprite]['sprites'],
-                              parent = self.node)
+                data = Sprite(
+                        name = sprite,
+                        sprites = offsets,
+                        offset = sprites[sprite]['sprites'],
+                        parent = self,
+                        length = sprites[sprite].get('length', 0),
+                        reset_on_complete = sprites[sprite].get('reset_on_complete',
+                                                                        False),
+                             )
 
             elif ((len(sprites[sprite]['sprites']) == 1) or
                 (sprites[sprite]['sprites'][0] == sprites[sprite]['sprites'][1])):
-                data = Sprite(name = sprite,
-                              sprites = offsets,
-                              offset = sprites[sprite]['sprites'][0],
-                              parent = self.node)
+                data = Sprite(
+                        name = sprite,
+                        sprites = offsets,
+                        offset = sprites[sprite]['sprites'][0],
+                        parent = self,
+                        length = sprites[sprite].get('length', 0),
+                        reset_on_complete = sprites[sprite].get('reset_on_complete',
+                                                                        False),
+                             )
 
             else:
-                data = Animation(name = sprite,
-                              sprites = offsets,
-                              animation_offsets = sprites[sprite]['sprites'],
-                              parent = self.node,
-                              loop = sprites[sprite].get('loop', False),
-                              speed = sprites[sprite].get('speed', DEFAULT_ANIMATIONS_SPEED))
+                data = Animation(
+                        name = sprite,
+                        sprites = offsets,
+                        animation_offsets = sprites[sprite]['sprites'],
+                        parent = self,
+                        loop = sprites[sprite].get('loop', False),
+                        speed = sprites[sprite].get('speed', DEFAULT_ANIMATIONS_SPEED),
+                        length = sprites[sprite].get('length', 0),
+                        reset_on_complete = sprites[sprite].get('reset_on_complete',
+                                                                        False),
+                             )
 
             self.items[sprite] = data
+
+        # if default_action and (default_action in self.items):
+            # self.default_action = default_action
+        # else:
+            # self.default_action = None
+
+        # print(self.default_action)
 
     def show(self, item_name:str):
         '''Make node switch to showcase of selected spritesheet's item instead
@@ -113,7 +137,8 @@ class SpritesheetObject:
 
     def switch(self, item_name: str):
         '''Play new item, but only if its different from current one'''
-        if not self.currently_shown or self.currently_shown.name != item_name:
+        if (not self.currently_shown or ((self.currently_shown.name != item_name)
+           and not self.currently_shown.locked)):
             self.show(item_name)
 
     def stop(self):
@@ -128,13 +153,20 @@ class Animation:
     '''Animation node. Meant to be initalized from SpritesheetObject. Holds one
     animation from spritesheet with provided playback settings'''
     def __init__(self, name:str, sprites: list, animation_offsets:tuple,
-                 parent, loop: bool, speed:float = DEFAULT_ANIMATIONS_SPEED):
+                 parent, loop: bool, speed:float = DEFAULT_ANIMATIONS_SPEED,
+                 length = 0, reset_on_complete:bool = False):
         #name of the animation itself
         self.name = name
 
         #parent node, to which animation applies.
         #Must be AnimatedObject with spritesheet texture attached to it
-        self.parent = parent
+        self.parent = parent.node
+
+        if reset_on_complete:
+            self.default_action = parent.default_action
+            self.parent_switch = parent.switch
+        else:
+            self.default_action = None
 
         #playback speed of animation
         self.speed = speed
@@ -151,6 +183,17 @@ class Animation:
         self.offsets = animation_offsets
         self.current_frame = self.offsets[0]
 
+        #if object has specified playback length set - locking animation from
+        #changing until length timer is exhausted
+        if length and length > 0:
+            self.length = length
+            self.current_length = length
+        else:
+            self.length = 0
+            self.current_length = 0
+
+        self.locked = False
+
     #idk if current name is okay, but keeping is as "play" would be weird for
     #static sprite
     def show(self):
@@ -161,7 +204,12 @@ class Animation:
         #"show" functions has been casted at once. It shouldnt happen anymore,
         #but this wasnt fixed properly - just avoided #TODO #NEEDFIX
         def update_animation(event):
-            if not self.parent or not self.playing:
+            if not self.parent:
+                return
+
+            if not self.playing:
+                if self.default_action:
+                    self.parent_switch(self.default_action)
                 return
 
             #ensuring that whatever below only runs if enough time has passed
@@ -195,6 +243,28 @@ class Animation:
         base.task_mgr.add(update_animation,
                         f"updates animation {self.name} of {self.parent}")
 
+        if not self.length:
+            return
+
+        self.locked = True
+        def length_timer(event):
+            if not self.parent:
+                return
+
+            dt = globalClock.get_dt()
+            self.current_length -= dt
+            if self.current_length > 0:
+                return event.cont
+
+            self.current_length = self.length
+            self.locked = False
+
+            if self.default_action:
+                self.parent_switch(self.default_action)
+
+        base.task_mgr.add(length_timer,
+                    f"locks {self.name} of {self.parent} from being changed")
+
     def stop(self):
         '''Stops animation playback'''
         #unless I've messed up, this should stop the task from above
@@ -202,16 +272,57 @@ class Animation:
 
 class Sprite:
     '''Single-sprite node. Used if you need to get part of spritesheet to be displayed'''
-    def __init__(self, name:str, sprites: list, offset:int, parent):
+    def __init__(self, name:str, sprites: list, offset:int, parent, length = 0,
+                 reset_on_complete:bool = False):
         # Sprites are still list and not str, to make it keep the same format as
         # animation. Just use list with single str inside if you need just one
         # sprite from the whole sheet, idk
         self.name = name
-        self.parent = parent
+        self.parent = parent.node
+
         self.sprites = sprites
         self.offset = offset
+
+        #TODO: maybe make some parent class for this stuff, to avoid copypaste
+        if length and length > 0:
+            self.length = length
+            self.current_length = length
+        else:
+            self.length = 0
+            self.current_length = 0
+
+        self.locked = False
+
+        #its only applied to sprites with length, for obvious reasons
+        if self.length and reset_on_complete:
+            self.default_action = parent.default_action
+            self.parent_switch = parent.switch
+        else:
+            self.default_action = None
 
     def show(self):
         '''Shows the current sprite'''
         self.parent.set_tex_offset(TextureStage.getDefault(),
                                    *self.sprites[self.offset])
+
+        if not self.length:
+            return
+
+        self.locked = True
+        def length_timer(event):
+            if not self.parent:
+                return
+
+            dt = globalClock.get_dt()
+            self.current_length -= dt
+            if self.current_length > 0:
+                return event.cont
+
+            self.current_length = self.length
+            self.locked = False
+
+            if self.default_action:
+                self.parent_switch(self.default_action)
+
+        base.task_mgr.add(length_timer,
+                    f"locks {self.name} of {self.parent} from being changed")
