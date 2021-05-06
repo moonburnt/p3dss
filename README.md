@@ -6,7 +6,7 @@
 
 **p3dss** is a spritesheet handling library, initially started as part of my WIP
 game [a2s3](https://github.com/moonburnt/a2s3). Since its beginning, I've added
-quite a few features and detached all parts that made it game-specifix, so now
+quite a few features and detached all parts that made it game-specific, so now
 its possible to use it in literally any project. It also has been relicensed under
 more permissive license, so now its possible to use it in proprietary projects too.
 
