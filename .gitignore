@@ -1,1 +1,6 @@
 __pycache__
+.venv
+p3dss.egg-info
+dist/
+build/
+tests/
