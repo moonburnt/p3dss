@@ -10,6 +10,12 @@ quite a few features and detached all parts that made it game-specific, so now
 its possible to use it in literally any project. It also has been relicensed under
 more permissive license, so now its possible to use it in proprietary projects too.
 
+## Development Status:
+
+Work in progress. While I generally try to make each update stable, there may be
+changes requiring code adjustments. If you will consider to use this library -
+refer to the particular version in your project's dependencies.
+
 ## Dependencies:
 
 This project depends solely on panda3d and nothing else.
