@@ -4,3 +4,4 @@ p3dss.egg-info
 dist/
 build/
 tests/
+example/p3dss
