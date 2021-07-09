@@ -4,6 +4,9 @@
 
 import p3dss
 from direct.showbase.ShowBase import ShowBase
+import logging
+
+log = logging.getLogger()
 
 SPRITESHEET = "./32x32-bat-sprite.png"
 # For the time being, p3dss uses this kinda weird-ish dictionary format to declare,
@@ -74,5 +77,13 @@ class Game(ShowBase):
         self.bat.switch(action)
 
 if __name__ == "__main__":
+    log.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(
+                       fmt='[%(asctime)s][%(name)s][%(levelname)s] %(message)s',
+                       datefmt='%d.%m.%y %H:%M:%S'
+                       ))
+    log.addHandler(handler)
+
     play = Game()
     play.run()
