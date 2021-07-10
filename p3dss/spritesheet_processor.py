@@ -56,13 +56,8 @@ def get_offsets(spritesheet:Texture, sprite_sizes:tuple):
 
     spritesheet_offsets = []
 
-    #dont ask questions, "it just works".
-    #Basically, the thing is: originally, I did the following:
-    #for row in range(0, sprite_rows):
-    #BUT, this made offsets list start from bottom layer to top, which worked but
-    #broke the whole "from top left to bottom right" style of image processing.
-    #So I went for this "kinda hacky" solution. It works on 2x2 sheet, idk about
-    #anything bigger than that
+    # We process rows backwards to make it match "from top left to bottom right"
+    # style of image processing, used by most tools (and thus probs expected)
     for row in range(sprite_rows-1, -1, -1):
         log.debug(f"Processing row {row}")
         for column in range(0, sprite_columns):
@@ -72,7 +67,7 @@ def get_offsets(spritesheet:Texture, sprite_sizes:tuple):
             offsets = Point(horizontal_offset, vertical_offset)
             log.debug(f"Got offsets: {offsets}")
             spritesheet_offsets.append(offsets)
-    log.debug(f"Spritesheet contain following offsets: {offsets}")
+    log.debug(f"Spritesheet contain following offsets: {spritesheet_offsets}")
 
     data = types.SpritesheetData(spritesheet, spritesheet_offsets, offset_steps)
     log.debug(f"Got following data: {data}, returning")
