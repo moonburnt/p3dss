@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
-# Simple example of how to use p3dss in your project
+# Simple example of how to use p3dss in order to use whole spritesheet's data to
+# create entity with multiple 2d animations/sprites attached to it
 
 import p3dss
 from direct.showbase.ShowBase import ShowBase
+from os.path import join
 import logging
 
 log = logging.getLogger()
 
-SPRITESHEET = "./32x32-bat-sprite.png"
+SPRITESHEET = join(join(".", "media"), "32x32-bat-sprite.png")
 # For the time being, p3dss uses this kinda weird-ish dictionary format to declare,
 # which sprite refers to which action. It may look complicated, but it all makes
 # sense in long run, since it allows for per-action settings.
@@ -77,7 +79,7 @@ class Game(ShowBase):
         self.bat.switch(action)
 
 if __name__ == "__main__":
-    log.setLevel(logging.DEBUG)
+    log.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter(
                        fmt='[%(asctime)s][%(name)s][%(levelname)s] %(message)s',

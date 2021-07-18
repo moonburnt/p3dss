@@ -1,0 +1,4 @@
+32x32-bat-sprite.png is licensed under OGA-BY 3.0
+Its author is bagzie on https://opengameart.org/content/bat-sprite
+
+example_button.png is licensed under CC0 and made by myself

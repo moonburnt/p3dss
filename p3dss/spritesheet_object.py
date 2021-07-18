@@ -1,6 +1,6 @@
 import logging
 from panda3d.core import CardMaker, TextureStage, Texture
-from p3dss import spritesheet_processor
+from p3dss import processor
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class SpritesheetObject:
         self.spritesheet.set_wrap_u(Texture.WM_mirror)
         self.spritesheet.set_wrap_v(Texture.WM_mirror)
 
-        sprite_data = spritesheet_processor.get_offsets(self.spritesheet, self.size)
+        sprite_data = processor.get_offsets(self.spritesheet, self.size)
 
         horizontal_scale, vertical_scale = sprite_data.step_sizes
         offsets = sprite_data.offsets

@@ -5,10 +5,9 @@
 ## Description:
 
 **p3dss** is a spritesheet handling library, initially started as part of my WIP
-game [a2s3](https://github.com/moonburnt/a2s3). Since its beginning, I've added
-quite a few features and detached all parts that made it game-specific, so now
-its possible to use it in literally any project. It also has been relicensed under
-more permissive license, so now its possible to use it in proprietary projects too.
+game [a2s3](https://github.com/moonburnt/a2s3). While its main focus is to provide
+a single object to handle all sprites and animations on spritesheet image, it
+also has some side abilities, such as batch texture cutting.
 
 ## Development Status:
 
@@ -31,8 +30,10 @@ offsets, rather than cutting image in memory, following limitations apply:
 - Spritesheet **has to divide to provided sprite size without remainder**. If it
 doesnt cut to perfect sprites, you will get strange results while using some of
 these (e.g blurry parts, parts of other sprite visible on previous and such)
-- Amount of sprite rows and columns **must be the power of 2**. Otherwise you will
-get glitches described above
+- Some functionality may require your spritesheet to fit such amount of sprites
+into its rows and columns, that **will be the power of 2**.
+Depending on case, it may be possible to circuimvent it with Config.rpc magic
+(see example code for further info).
 
 ## Usage:
 
@@ -43,5 +44,5 @@ get glitches described above
 
 This software has been licensed under [MIT](
 https://github.com/moonburnt/p3dss/blob/master/LICENSE).
-For license of media used in example snippets, see [sprite_info.txt](
-https://github.com/moonburnt/p3dss/tree/master/example/sprite_info.txt)
+For license of media used in example snippets, see [media_info.txt](
+https://github.com/moonburnt/p3dss/tree/master/example/media/media_info.txt)
