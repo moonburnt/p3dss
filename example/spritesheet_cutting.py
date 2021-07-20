@@ -8,7 +8,7 @@
 
 from p3dss import processor
 from direct.showbase.ShowBase import ShowBase
-from direct.gui.DirectGui import (DirectButton, DGG)
+from direct.gui.DirectGui import DirectButton, DGG
 from os.path import join
 import logging
 
@@ -16,6 +16,7 @@ log = logging.getLogger()
 
 SPRITESHEET = join(join(".", "media"), "example_button.png")
 SPRITE_SIZE = (64, 32)
+
 
 class Game(ShowBase):
     def __init__(self):
@@ -39,9 +40,9 @@ class Game(ShowBase):
         # {spritesheet_name_without_extension}_{sprite_num}. In case its impossible
         # to fetch spritesheet name, mask "sprite" will be used instead of it
         sprites = processor.get_textures(
-                                    spritesheet = spritesheet,
-                                    sprite_sizes = SPRITE_SIZE,
-                                    )
+            spritesheet=spritesheet,
+            sprite_sizes=SPRITE_SIZE,
+        )
 
         # Creating simple button that disables itself on click.
         # DirectButton objects accept either one or up to 4 frameTexture items,
@@ -49,25 +50,28 @@ class Game(ShowBase):
         # normal -> hover -> clicked -> disabled
         # If you wont pass some, first will be used instead
         self.button = DirectButton(
-                            command = self.disable_button,
-                            pos = (0, 1, 0),
-                            relief = DGG.FLAT,
-                            scale = 0.1,
-                            frameTexture = sprites,
-                            frameSize = (-2, 2, -1, 1),
-                            parent = base.aspect2d,
-                            )
+            command=self.disable_button,
+            pos=(0, 1, 0),
+            relief=DGG.FLAT,
+            scale=0.1,
+            frameTexture=sprites,
+            frameSize=(-2, 2, -1, 1),
+            parent=base.aspect2d,
+        )
 
     def disable_button(self):
         self.button["state"] = DGG.DISABLED
 
+
 if __name__ == "__main__":
     log.setLevel(logging.INFO)
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(
-                       fmt='[%(asctime)s][%(name)s][%(levelname)s] %(message)s',
-                       datefmt='%d.%m.%y %H:%M:%S'
-                       ))
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="[%(asctime)s][%(name)s][%(levelname)s] %(message)s",
+            datefmt="%d.%m.%y %H:%M:%S",
+        )
+    )
     log.addHandler(handler)
 
     play = Game()

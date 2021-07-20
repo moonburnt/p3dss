@@ -6,19 +6,24 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 def _is_power_of_two(num):
-    return (num and not(num & (num -1)))
+    return num and not (num & (num - 1))
 
-def _has_remainder(spritesheet:Texture, sprite_sizes:tuple):
-    return ((spritesheet.get_orig_file_x_size() % sprite_sizes[0]) or
-            (spritesheet.get_orig_file_y_size() % sprite_sizes[1]))
 
-def _get_columns_and_rows(spritesheet:Texture, sprite_sizes:tuple):
+def _has_remainder(spritesheet: Texture, sprite_sizes: tuple):
+    return (spritesheet.get_orig_file_x_size() % sprite_sizes[0]) or (
+        spritesheet.get_orig_file_y_size() % sprite_sizes[1]
+    )
+
+
+def _get_columns_and_rows(spritesheet: Texture, sprite_sizes: tuple):
     columns = int(spritesheet.get_orig_file_x_size() / sprite_sizes[0])
     rows = int(spritesheet.get_orig_file_y_size() / sprite_sizes[1])
     return (columns, rows)
 
-def get_offsets(spritesheet:Texture, sprite_sizes:tuple):
+
+def get_offsets(spritesheet: Texture, sprite_sizes: tuple):
     """Fetch all available offsets from provided spritesheet."""
 
     # For now, this has 2 limitations, both of which are addressed as exceptions:
@@ -49,10 +54,10 @@ def get_offsets(spritesheet:Texture, sprite_sizes:tuple):
 
     log.debug(f"Our sheet has {sprite_columns}x{sprite_rows} sprites")
 
-    #idk if these should be flipped - its 3 am
-    #this may backfire on values bigger than one... but it should never happen
-    horizontal_offset_step = 1/sprite_columns
-    vertical_offset_step = 1/sprite_rows
+    # idk if these should be flipped - its 3 am
+    # this may backfire on values bigger than one... but it should never happen
+    horizontal_offset_step = 1 / sprite_columns
+    vertical_offset_step = 1 / sprite_rows
     offset_steps = Point(horizontal_offset_step, vertical_offset_step)
     log.debug(f"Offset steps are {offset_steps}")
 
@@ -60,7 +65,7 @@ def get_offsets(spritesheet:Texture, sprite_sizes:tuple):
 
     # We process rows backwards to make it match "from top left to bottom right"
     # style of image processing, used by most tools (and thus probs expected)
-    for row in range(sprite_rows-1, -1, -1):
+    for row in range(sprite_rows - 1, -1, -1):
         log.debug(f"Processing row {row}")
         for column in range(0, sprite_columns):
             log.debug(f"Processing column {column}")
@@ -76,7 +81,8 @@ def get_offsets(spritesheet:Texture, sprite_sizes:tuple):
 
     return data
 
-def get_images(spritesheet:Texture, sprite_sizes:tuple):
+
+def get_images(spritesheet: Texture, sprite_sizes: tuple):
     """Cut provided spritesheet texture into separate PNMImage objects"""
     if _has_remainder(spritesheet, sprite_sizes):
         raise exceptions.InvalidSpriteSize(spritesheet.get_name(), sprite_sizes)
@@ -84,13 +90,13 @@ def get_images(spritesheet:Texture, sprite_sizes:tuple):
     sprite_x, sprite_y = sprite_sizes
     columns, rows = _get_columns_and_rows(spritesheet, sprite_sizes)
 
-    #This is safety check to ensure there wont be any weird effects during cutting,
-    #caused by texture autorescale. In order to circuimvent this, you need to
-    #set "textures-power-2 none" in your Config.rpc.
-    #There seem to be setters and getters to deal with it on per-texture basis,
-    #but thus far I couldnt figure out how to make them work properly #TODO
+    # This is safety check to ensure there wont be any weird effects during cutting,
+    # caused by texture autorescale. In order to circuimvent this, you need to
+    # set "textures-power-2 none" in your Config.rpc.
+    # There seem to be setters and getters to deal with it on per-texture basis,
+    # but thus far I couldnt figure out how to make them work properly #TODO
     if spritesheet.getTexturesPower2():
-        if (not _is_power_of_two(columns) or not _is_power_of_two(rows)):
+        if not _is_power_of_two(columns) or not _is_power_of_two(rows):
             raise exceptions.InvalidSpriteSize(spritesheet.get_name(), sprite_sizes)
 
     # Extract texture's image from memory
@@ -102,10 +108,10 @@ def get_images(spritesheet:Texture, sprite_sizes:tuple):
         log.debug(f"Processing row{row}")
         for column in range(0, columns):
             log.debug(f"Processing column {column}")
-            #THIS WAS BUGGED - I HAD TO FLIP IT
+            # THIS WAS BUGGED - I HAD TO FLIP IT
             x = column * sprite_x
             y = row * sprite_y
-            #passing amount of channels is important to allow transparency
+            # passing amount of channels is important to allow transparency
             pic = Image(sprite_x, sprite_y, sheet_image.get_num_channels())
             pic.blendSubImage(sheet_image, 0, 0, x, y, sprite_x, sprite_y, 1.0)
             images.append(pic)
@@ -113,15 +119,16 @@ def get_images(spritesheet:Texture, sprite_sizes:tuple):
     log.debug(f"Got following images: {images}")
     return images
 
-def to_textures(images:list, name_mask:str = None):
+
+def to_textures(images: list, name_mask: str = None):
     """Convert provided list of PNMImage objects into Texture objects"""
-    #doing it like that to enable ez override in get_textures()
+    # doing it like that to enable ez override in get_textures()
     name_mask = name_mask or "sprite"
     textures = []
 
-    #without name mask, this may seem like it returns empty sequence, but its not
+    # without name mask, this may seem like it returns empty sequence, but its not
     for num, item in enumerate(images):
-        #this is how we turn image into texture
+        # this is how we turn image into texture
         texture = Texture(f"{name_mask}_{num}")
         texture.load(item)
         textures.append(texture)
@@ -129,11 +136,12 @@ def to_textures(images:list, name_mask:str = None):
     log.debug(f"Got following textures: {textures}")
     return textures
 
-def get_textures(spritesheet:Texture, sprite_sizes:tuple):
+
+def get_textures(spritesheet: Texture, sprite_sizes: tuple):
     """Cut provided spritesheet texture into multiple textures"""
     images = get_images(
-                        spritesheet = spritesheet,
-                        sprite_sizes = sprite_sizes,
-                        )
+        spritesheet=spritesheet,
+        sprite_sizes=sprite_sizes,
+    )
 
     return to_textures(images, spritesheet.get_name())

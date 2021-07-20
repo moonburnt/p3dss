@@ -15,18 +15,20 @@ SPRITESHEET = join(join(".", "media"), "32x32-bat-sprite.png")
 # which sprite refers to which action. It may look complicated, but it all makes
 # sense in long run, since it allows for per-action settings.
 SPRITES = {
-           # If we pass "sprites" as single int or (0, 0) - p3ds will automatically
-           # consider it to be a single sprite
-           "dead": {"sprites": 0},
-           # While passing tuple, list or set will turn it into animation sequence
-           "fly_forward": {"sprites": (1, 3)},
-           # As for "per-action settings": there we enabled looping, so animation
-           # will play till we another visuals-changing event will occur.
-           # While default behavior is to play animation once and then stop
-           "fly_right": {"sprites": (5, 7), "loop": True},
-           "fly_backward": {"sprites": (9, 11)},
-           "fly_left": {"sprites": (13, 15), "loop": True}}
+    # If we pass "sprites" as single int or (0, 0) - p3ds will automatically
+    # consider it to be a single sprite
+    "dead": {"sprites": 0},
+    # While passing tuple, list or set will turn it into animation sequence
+    "fly_forward": {"sprites": (1, 3)},
+    # As for "per-action settings": there we enabled looping, so animation
+    # will play till we another visuals-changing event will occur.
+    # While default behavior is to play animation once and then stop
+    "fly_right": {"sprites": (5, 7), "loop": True},
+    "fly_backward": {"sprites": (9, 11)},
+    "fly_left": {"sprites": (13, 15), "loop": True},
+}
 SPRITE_SIZE = (32, 32)
+
 
 class Game(ShowBase):
     def __init__(self):
@@ -41,10 +43,12 @@ class Game(ShowBase):
         # you want to handle these - load on model's init, or right on game's
         # launch and then keep in memory
         spritesheet = loader.load_texture(SPRITESHEET)
-        self.bat = p3dss.SpritesheetObject(name = "Bat",
-                                           spritesheet = spritesheet,
-                                           sprites = SPRITES,
-                                           sprite_size = SPRITE_SIZE)
+        self.bat = p3dss.SpritesheetObject(
+            name="Bat",
+            spritesheet=spritesheet,
+            sprites=SPRITES,
+            sprite_size=SPRITE_SIZE,
+        )
 
         # SpritesheetObject has internal var called "node". Which is the local
         # instance of CardMaker node, attached to parent (we didnt pass it above,
@@ -78,13 +82,16 @@ class Game(ShowBase):
     def change_animation(self, action):
         self.bat.switch(action)
 
+
 if __name__ == "__main__":
     log.setLevel(logging.INFO)
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(
-                       fmt='[%(asctime)s][%(name)s][%(levelname)s] %(message)s',
-                       datefmt='%d.%m.%y %H:%M:%S'
-                       ))
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="[%(asctime)s][%(name)s][%(levelname)s] %(message)s",
+            datefmt="%d.%m.%y %H:%M:%S",
+        )
+    )
     log.addHandler(handler)
 
     play = Game()
