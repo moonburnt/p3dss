@@ -32,13 +32,10 @@ class SpritesheetObject:
         size_x, size_y = self.size
         log.debug(f"{self.name}'s size has been set to {size_x}x{size_y}")
 
-        # the magic that allows textures to be mirrored. With that thing being
-        # there, its possible to use values in range 1-2 to get versions of sprites
-        # that will face the opposite direction, removing the requirement to draw
-        # them with hands. Without thing thing being there, 0 and 1 will be threated
-        # as same coordinates, coz "out of box" texture wrap mode is "repeat"
-        self.spritesheet.set_wrap_u(Texture.WM_mirror)
-        self.spritesheet.set_wrap_v(Texture.WM_mirror)
+        # using WM_clamp instead of WM_mirror, to avoid issue with black 1-pixel
+        # bars appearing on top of spritesheet randomly
+        self.spritesheet.set_wrap_u(Texture.WM_clamp)
+        self.spritesheet.set_wrap_v(Texture.WM_clamp)
 
         sprite_data = processor.get_offsets(self.spritesheet, self.size)
 
