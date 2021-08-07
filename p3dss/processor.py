@@ -1,29 +1,28 @@
 from . import types, exceptions
-from panda3d.core import Texture
-from panda3d.core import LPoint2f as Point
+from panda3d.core import Texture, SamplerState, LPoint2
 from panda3d.core import PNMImage as Image
 import logging
 
 log = logging.getLogger(__name__)
 
 
-def _is_power_of_two(num):
+def _is_power_of_two(num) -> bool:
     return num and not (num & (num - 1))
 
 
-def _has_remainder(spritesheet: Texture, sprite_sizes: tuple):
+def _has_remainder(spritesheet: Texture, sprite_sizes: tuple) -> bool:
     return (spritesheet.get_orig_file_x_size() % sprite_sizes[0]) or (
         spritesheet.get_orig_file_y_size() % sprite_sizes[1]
     )
 
 
-def _get_columns_and_rows(spritesheet: Texture, sprite_sizes: tuple):
+def _get_columns_and_rows(spritesheet: Texture, sprite_sizes: tuple) -> tuple:
     columns = int(spritesheet.get_orig_file_x_size() / sprite_sizes[0])
     rows = int(spritesheet.get_orig_file_y_size() / sprite_sizes[1])
     return (columns, rows)
 
 
-def get_offsets(spritesheet: Texture, sprite_sizes: tuple):
+def get_offsets(spritesheet: Texture, sprite_sizes: tuple) -> types.SpritesheetData:
     """Fetch all available offsets from provided spritesheet."""
 
     # For now, this has 2 limitations, both of which are addressed as exceptions:
@@ -58,7 +57,7 @@ def get_offsets(spritesheet: Texture, sprite_sizes: tuple):
     # this may backfire on values bigger than one... but it should never happen
     horizontal_offset_step = 1 / sprite_columns
     vertical_offset_step = 1 / sprite_rows
-    offset_steps = Point(horizontal_offset_step, vertical_offset_step)
+    offset_steps = LPoint2(horizontal_offset_step, vertical_offset_step)
     log.debug(f"Offset steps are {offset_steps}")
 
     spritesheet_offsets = []
@@ -71,7 +70,7 @@ def get_offsets(spritesheet: Texture, sprite_sizes: tuple):
             log.debug(f"Processing column {column}")
             horizontal_offset = column * horizontal_offset_step
             vertical_offset = row * vertical_offset_step
-            offsets = Point(horizontal_offset, vertical_offset)
+            offsets = LPoint2(horizontal_offset, vertical_offset)
             log.debug(f"Got offsets: {offsets}")
             spritesheet_offsets.append(offsets)
     log.debug(f"Spritesheet contain following offsets: {spritesheet_offsets}")
@@ -82,7 +81,7 @@ def get_offsets(spritesheet: Texture, sprite_sizes: tuple):
     return data
 
 
-def get_images(spritesheet: Texture, sprite_sizes: tuple):
+def get_images(spritesheet: Texture, sprite_sizes: tuple) -> list:
     """Cut provided spritesheet texture into separate PNMImage objects"""
     if _has_remainder(spritesheet, sprite_sizes):
         raise exceptions.InvalidSpriteSize(spritesheet.get_name(), sprite_sizes)
@@ -120,7 +119,12 @@ def get_images(spritesheet: Texture, sprite_sizes: tuple):
     return images
 
 
-def to_textures(images: list, name_mask: str = None):
+def to_textures(
+    images: list,
+    name_mask: str = None,
+    image_sizes: LPoint2 = None,
+    texture_filter: SamplerState = None,
+) -> list:
     """Convert provided list of PNMImage objects into Texture objects"""
     # doing it like that to enable ez override in get_textures()
     name_mask = name_mask or "sprite"
@@ -131,17 +135,29 @@ def to_textures(images: list, name_mask: str = None):
         # this is how we turn image into texture
         texture = Texture(f"{name_mask}_{num}")
         texture.load(item)
+        if texture_filter is not None:
+            texture.set_magfilter(texture_filter)
+            texture.set_minfilter(texture_filter)
+        if image_sizes:
+            texture.set_orig_file_size(*image_sizes, 1)
         textures.append(texture)
 
     log.debug(f"Got following textures: {textures}")
     return textures
 
 
-def get_textures(spritesheet: Texture, sprite_sizes: tuple):
+def get_textures(
+    spritesheet: Texture, sprite_sizes: tuple, texture_filter: SamplerState = None
+) -> list:
     """Cut provided spritesheet texture into multiple textures"""
     images = get_images(
         spritesheet=spritesheet,
         sprite_sizes=sprite_sizes,
     )
+    # Allowing for inheriting filter from parent in case its been set
+    # This is based on magfilter, coz I cant make it inherit from one or another
+    # since they all have defaults set to enumerator with non-zero value
+    if texture_filter is None:
+        texture_filter = spritesheet.get_magfilter()
 
-    return to_textures(images, spritesheet.get_name())
+    return to_textures(images, spritesheet.get_name(), sprite_sizes, texture_filter)

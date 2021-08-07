@@ -1,10 +1,61 @@
 import logging
-from panda3d.core import CardMaker, TextureStage, Texture
+from panda3d.core import CardMaker, TextureStage, Texture, NodePath, Vec3
 from p3dss import processor
 
 log = logging.getLogger(__name__)
 
 DEFAULT_ANIMATIONS_SPEED = 0.1
+
+
+def make_sprite_node(
+    sprite: Texture,
+    size: tuple = None,
+    name: str = None,
+    is_two_sided: bool = True,
+    is_transparent: bool = True,
+    parent: NodePath = None,
+    position: Vec3 = None,
+) -> NodePath:
+    """Make flat single-sprite node out of provided data"""
+    # Using WM_clamp instead of WM_mirror, to avoid issue with black 1-pixel
+    # bars appearing on top of spritesheet randomly.
+    # Idk if this needs to have possibility to override it #TODO
+    sprite.set_wrap_u(Texture.WM_clamp)
+    sprite.set_wrap_v(Texture.WM_clamp)
+
+    # Creating CardMaker frame
+    card = CardMaker(name or sprite.get_name() or "sprite")
+    # This will fail if texture has been generated with no set_orig_file_size()
+    size = size or (sprite.get_orig_file_x_size(), sprite.get_orig_file_y_size())
+
+    # Been told that its not in pixels, thus accepting either 1, 2 or 4 values
+    # Kinda jank, I know
+    if len(size) > 3:
+        card.set_frame(-size[0], size[1], -size[2], size[3])
+    elif len(size) > 1:
+        card.set_frame(-size[0], size[0], -size[1], size[1])
+    else:
+        card.set_frame(-size[0], size[0], -size[0], size[0])
+
+    parent = parent or NodePath()
+    node = parent.attach_new_node(card.generate())
+    node.set_texture(sprite)
+
+    # Making it possible to utilize texture's alpha channel settings
+    # This is a float from 0 to 1, but I dont think there is a point to only
+    # show half of actual object's transparency.
+    # Do it manually afterwards if thats what you need
+    if is_transparent:
+        node.set_transparency(1)
+    # Enabling ability to render texture on both front and back of card
+    if is_two_sided:
+        node.set_two_sided(True)
+    # Setting object's position. This is done relatively to parent, thus if you
+    # didnt pass any, it may be a bit janky
+    if position:
+        node.set_pos(*position)
+
+    return node
 
 
 class SpritesheetObject:
@@ -15,7 +66,7 @@ class SpritesheetObject:
         self,
         name: str,
         spritesheet,
-        sprites: list,
+        sprites: dict,
         sprite_size: int,
         parent=None,
         default_sprite: int = 0,
@@ -32,43 +83,34 @@ class SpritesheetObject:
         size_x, size_y = self.size
         log.debug(f"{self.name}'s size has been set to {size_x}x{size_y}")
 
-        # using WM_clamp instead of WM_mirror, to avoid issue with black 1-pixel
-        # bars appearing on top of spritesheet randomly
-        self.spritesheet.set_wrap_u(Texture.WM_clamp)
-        self.spritesheet.set_wrap_v(Texture.WM_clamp)
-
         sprite_data = processor.get_offsets(self.spritesheet, self.size)
 
         horizontal_scale, vertical_scale = sprite_data.step_sizes
         offsets = sprite_data.offsets
 
-        # entity2d used to create this with category. Idk
-        entity_frame = CardMaker(self.name)
-        # setting frame's size. Say, for 32x32 sprite all of these need to be 16
-        entity_frame.set_frame(-(size_x / 2), (size_x / 2), -(size_y / 2), (size_y / 2))
-
-        # settings this to base.render wont work - I tried
-        self.node = parent.attach_new_node(entity_frame.generate())
-        self.node.set_texture(self.spritesheet)
+        self.node = make_sprite_node(
+            sprite=self.spritesheet,
+            # This is kept for backwards compatibility. I should probably make
+            # generated objects have unified size measurement values across whole
+            # library #TODO
+            size=(size_x / 2, size_y / 2),
+            name=self.name,
+            is_two_sided=False,
+            is_transparent=True,
+            parent=parent,
+        )
 
         # okay, this does the magic
         # basically, to show the very first sprite of 2 in row, we set tex scale
         # to half (coz half is our normal char's size). If we will need to use it
         # with sprites other than first - then we also should adjust offset accordingly
-        # entity_object.set_tex_offset(TextureStage.getDefault(), 0.5, 0)
-        # entity_object.set_tex_scale(TextureStage.getDefault(), 0.5, 1)
         self.node.set_tex_scale(
             TextureStage.getDefault(), horizontal_scale, vertical_scale
         )
 
-        # now, to use the stuff from cut_spritesheet function.
-        # lets say, we need to use second sprite from sheet. Just do:
-        # entity_object.set_tex_offset(TextureStage.getDefault(), *offsets[1])
+        # now,lets say, we need to use second sprite from sheet. Just do:
+        # self.node.set_tex_offset(TextureStage.getDefault(), *offsets[1])
         self.node.set_tex_offset(TextureStage.getDefault(), *offsets[default_sprite])
-
-        # enable support for alpha channel. This is a float, e.g making it non-100%
-        # will require values between 0 and 1
-        self.node.set_transparency(1)
 
         # setting this to None may cause crashes on few rare cases, but going
         # for "idle_right" wont work for projectiles... So I technically add it
@@ -117,13 +159,6 @@ class SpritesheetObject:
                 )
 
             self.items[sprite] = data
-
-        # if default_action and (default_action in self.items):
-        # self.default_action = default_action
-        # else:
-        # self.default_action = None
-
-        # print(self.default_action)
 
     def show(self, item_name: str):
         """Make node switch to showcase of selected spritesheet's item instead
