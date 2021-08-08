@@ -1,7 +1,7 @@
 from .exceptions import *
 from .types import *
 from .processor import *
-from .spritesheet_object import *
+from .nodes import *
 
 import logging
 

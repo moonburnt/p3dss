@@ -33,7 +33,7 @@ class Game(ShowBase):
         sprites = p3dss.processor.get_textures(
             spritesheet=spritesheet,
             sprite_sizes=SPRITE_SIZE,
-            # Applying texture filter that will make our image look crisp-sharp, 
+            # Applying texture filter that will make our image look crisp-sharp,
             # since its pixel art
             texture_filter=SamplerState.FT_nearest,
         )
